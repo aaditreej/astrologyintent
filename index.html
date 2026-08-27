@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Curious about astrology?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23F15926'/%3E%3Cpath d='M12 5c.6 3.4 1.3 5 4.6 5.7-3.3.7-4 2.3-4.6 5.7-.6-3.4-1.3-5-4.6-5.7C10.7 10 11.4 8.4 12 5Z' fill='%23FFF4EB'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#F15926; --primary-deep:#D2410F; --accent:#FDBE6E;
+    --ink:#2A1109; --ink-2:#5C4238; --muted:#8B7268; --line:#F3DDD1; --soft:#FFF4EB;
+    --sel-a:#FFF3E7; --sel-b:#FFE1CB;
+    --shadow:0 1px 2px rgb(90 40 15 / .06); --shadow-sel:0 4px 16px rgb(241 89 38 / .16);
+    --display:"Fraunces","Iowan Old Style",Georgia,serif;
+    --ui:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:var(--ui);color:var(--ink);overflow-x:hidden;
+    background-color:hsl(18 89% 95%);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, hsl(22 95% 88% / .7), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 110%, hsl(14 90% 85% / .45), transparent 60%);
+    background-attachment:fixed;
+    display:flex;justify-content:center;align-items:flex-start;
+  }
+  .app{position:relative;width:100%;max-width:448px;display:flex;flex-direction:column}
+  button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:8px}
+
+  .screen{flex:1;display:none;flex-direction:column}
+  .app[data-screen="form"] #s-form,
+  .app[data-screen="done"] #s-done,
+  .app[data-screen="already"] #s-already{display:flex}
+  /* the confirmation screens are short and celebratory -- they read better
+     centered in the full viewport. The form screen deliberately does NOT
+     get this: forcing it to a full-viewport minimum is what created the
+     dead space between the questions and the CTA in the first place. */
+  #s-done, #s-already{min-height:100vh;min-height:100dvh}
+
+  .body{padding:clamp(14px,2.6vh,22px) 20px 110px;display:flex;flex-direction:column;gap:13px}
+
+  h1{font-family:var(--display);font-weight:600;font-size:clamp(21px,5.6vw,25px);line-height:1.14;letter-spacing:-.015em}
+  .lede{margin-top:4px;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+
+  /* segmented progress bar: fills as each question is actually touched */
+  .steps{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .steps-track{flex:1;display:flex;gap:4px}
+  .steps-track i{flex:1;height:3px;border-radius:99px;background:#F0D6C6;overflow:hidden;position:relative;display:block}
+  .steps-track i::after{content:"";position:absolute;inset:0;background:var(--primary);
+    transform:scaleX(0);transform-origin:left;transition:transform .22s ease}
+  .steps-track i.on::after{transform:scaleX(1)}
+  .steps-label{flex:none;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+
+  .q{display:flex;flex-direction:column;gap:7px}
+  .qlabel{font-size:13.5px;font-weight:700;letter-spacing:-.005em;line-height:1.3;color:var(--ink)}
+  .qlabel .req{color:var(--primary)}
+  .qhint{display:block;margin-top:1px;font-size:11px;font-weight:500;color:var(--muted)}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .chips.chips-3{grid-template-columns:repeat(3,1fr)}
+  .chips.chips-col{grid-template-columns:1fr}
+  /* full-width rows read better as icon+title+description, left aligned --
+     the compact 3-across belief question keeps its centered single-line pill */
+  .chips-col .chip{
+    justify-content:flex-start;text-align:left;align-items:flex-start;
+    border-radius:16px;padding:11px 13px;min-height:0;gap:11px;
+  }
+  .chips-col .chip-icon{width:32px;height:32px;border-radius:10px;margin-top:1px}
+  .chips-col .chip-label{flex:1;padding-top:1px}
+  .chips-col .chip .check{margin-top:2px}
+  .chip-title{display:block;font-size:13px;font-weight:700}
+  .chip-desc{display:block;margin-top:2px;font-size:11px;font-weight:500;line-height:1.32;color:var(--muted)}
+  .chip[aria-checked="true"] .chip-desc{color:var(--ink-2)}
+
+  .chip{
+    position:relative;display:flex;align-items:center;justify-content:center;gap:4px;
+    text-align:center;background:#fff;border:1.5px solid var(--line);
+    border-radius:999px;box-shadow:var(--shadow);padding:8px 10px;font-size:12px;font-weight:600;
+    color:var(--ink);line-height:1.22;min-height:38px;
+    transition:border-color .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease;
+  }
+  .chip-icon{
+    flex:none;width:22px;height:22px;border-radius:8px;display:grid;place-items:center;
+    background:var(--soft);color:var(--primary);
+  }
+  .chip[aria-checked="true"] .chip-icon{background:linear-gradient(145deg,var(--accent),var(--primary) 90%);color:#fff}
+  .chip-label{min-width:0}
+  .chip .check{
+    flex:none;width:15px;height:15px;border-radius:50%;background:var(--primary);color:#fff;
+    display:grid;place-items:center;opacity:0;transform:scale(.4);
+    transition:opacity .18s ease,transform .18s ease;
+  }
+  .chip .check svg{display:block}
+  .chip[aria-checked="true"]{
+    background:linear-gradient(150deg,var(--sel-a),var(--sel-b));
+    border-color:var(--primary);color:var(--primary-deep);box-shadow:var(--shadow-sel);
+  }
+  .chip[aria-checked="true"] .check{opacity:1;transform:scale(1)}
+
+  .divider{height:1px;background:var(--line);margin:1px 0}
+
+  .note{flex:none;min-height:16px;font-size:11.5px;line-height:1.3;color:var(--muted);text-align:center}
+  .note.warn{color:var(--primary);font-weight:600}
+
+  .foot{
+    position:fixed;left:50%;bottom:0;transform:translateX(-50%);
+    width:100%;max-width:448px;z-index:2;
+    padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    background:hsl(18 89% 95%);
+  }
+  .foot::before{
+    content:"";position:absolute;left:0;right:0;bottom:100%;height:22px;pointer-events:none;
+    background:linear-gradient(to bottom, transparent, hsl(18 89% 95%));
+  }
+  .cta{width:100%;height:48px;border-radius:15px;font-size:15.5px;font-weight:600;letter-spacing:-.01em;color:#fff;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-deep));box-shadow:0 8px 22px rgb(241 89 38 / .3);
+    transition:transform .1s}
+  .cta:active{transform:translateY(1px)}
+  .cta[disabled]{background:#F0E2DA;color:#B39C90;box-shadow:none;cursor:not-allowed}
+
+  .done{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:0 24px;text-align:center}
+  .seal{width:78px;height:78px;border-radius:999px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(140deg,var(--accent),var(--primary) 82%);
+    box-shadow:0 14px 32px rgb(241 89 38 / .32);animation:pop .42s cubic-bezier(.2,1.3,.4,1) both}
+  @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .done h1{margin-top:20px;font-size:clamp(23px,6vw,26px)}
+  .done .lede{margin-top:9px;font-size:13.5px;max-width:29ch}
+  .loading{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .loading .spin{width:28px;height:28px;border-radius:999px;border:3px solid var(--line);
+    border-top-color:var(--primary);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-screen="loading">
+
+  <div class="loading" id="loadingScreen"><span class="spin"></span></div>
+
+  <section class="screen" id="s-form">
+    <div class="body">
+      <div>
+        <h1>Curious about astrology?</h1>
+        <p class="lede">A few quick questions — takes less than a minute.</p>
+        <div class="steps" aria-hidden="true">
+          <div class="steps-track" id="steps"><i></i><i></i><i></i></div>
+          <span class="steps-label" id="stepsLabel">0 of 3</span>
+        </div>
+      </div>
+
+      <div class="q">
+        <div class="qlabel">Do you believe in astrology? <span class="req">*</span></div>
+        <div class="chips chips-3" id="q1" role="radiogroup"></div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="q">
+        <div class="qlabel">Which of these have you done before? <span class="req">*</span><span class="qhint">Select any</span></div>
+        <div class="chips chips-col" id="q2" role="group" aria-label="Which of these have you done before?"></div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="q">
+        <div class="qlabel">What are you looking for?<span class="qhint">Optional &middot; pick any</span></div>
+        <div class="chips chips-col" id="q3"></div>
+      </div>
+
+      <div class="note" id="note"></div>
+    </div>
+    <div class="foot">
+      <button class="cta" id="submit" disabled><span id="submitLabel">Answer the questions above</span></button>
+    </div>
+  </section>
+
+  <section class="screen" id="s-done">
+    <div class="done">
+      <div class="seal"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1>You're on the list</h1>
+      <p class="lede">A few of you will get early access to a pass. We'll be in touch.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="s-already">
+    <div class="done">
+      <div class="seal"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1>You've already answered</h1>
+      <p class="lede">Thanks again — we've got what we need.</p>
+    </div>
+  </section>
+</div>
+<script>
+/* ══════════ Config ══════════ */
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby3coQJe2xVEOMYk59Y9LU-D78h0OM7xYmiI4acbeLehkLPA3N5R3riXc3zLHbJ9Zv1/exec';
+const INSTRUMENT = 'astrology_survey';
+
+const urlParams = new URLSearchParams(window.location.search);
+
+function lsGet(k){ try { return window.localStorage.getItem(k); } catch (err) { return null; } }
+function lsSet(k, v){ try { window.localStorage.setItem(k, v); } catch (err) {} }
+
+const ANON_KEY = 'survey_anon_id';
+function anonId(){
+  let id = lsGet(ANON_KEY);
+  if (!id){ id = 'anon_' + Math.random().toString(36).slice(2, 10); lsSet(ANON_KEY, id); }
+  return id;
+}
+
+/* Same base64/plain id handling as the other pages: the in-app banner passes
+   the user id base64-encoded (13236328 -> MTMyMzYzMjg=); a bare numeric id
+   is passed through as-is. One link shape then works everywhere. */
+function decodeUserId(raw){
+  if (!raw) return null;
+  raw = String(raw);
+  if (/^\d+$/.test(raw)) return { id: raw, encoding: 'plain' };
+  var b64 = raw.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  try {
+    var out = atob(b64);
+    if (/^\d+$/.test(out)) return { id: out, encoding: 'base64' };
+  } catch (err) {}
+  return { id: raw, encoding: 'unknown' };
+}
+
+const RAW_ID      = urlParams.get('user_id') || urlParams.get('u');
+const DECODED     = decodeUserId(RAW_ID);
+const PASSED_ID   = DECODED ? DECODED.id : null;
+const ID_ENCODING = DECODED ? DECODED.encoding : 'none';
+const IS_ANON     = !PASSED_ID;
+const USER_ID     = PASSED_ID || anonId();
+const SOURCE      = urlParams.get('source') || urlParams.get('src') || (IS_ANON ? 'unknown' : 'app');
+const SESSION_ID  = 's_' + Math.random().toString(36).slice(2, 10);
+const DONE_KEY    = 'survey_done:' + USER_ID;
+
+function storeSet(k, v){
+  try { if (window.storage) window.storage.set(k, v).catch(() => {}); else lsSet(k, v); } catch (err) {}
+}
+async function storeGet(k){
+  try { return window.storage ? await window.storage.get(k).then(r => r ? r.value : null) : lsGet(k); }
+  catch (err) { return null; }
+}
+function markDone(){ storeSet(DONE_KEY, '1'); }
+async function isDoneLocally(){ return (await storeGet(DONE_KEY)) === '1'; }
+
+/* ══════════ Session measurement ══════════ */
+const T_START = Date.now();
+let answers = { q1:null };          // belief -- the only required question
+let priorExperience = [];           // multi-select, optional: used_app / talked_to_astrologer / neither
+let interestTypes = [];             // multi-select, optional -- unchanged from before
+let firstAnswerAt = null;
+let submitted = false;
+// Monotonic: once a section is touched it stays "reached" even if every
+// chip in it is later deselected back to empty -- same principle the old
+// furthestReached() used, recalibrated to the new 3-question layout.
+let touched = { q1:false, q2:false, q3:false };
+
+function furthestReached(){
+  if (touched.q3) return 3;
+  if (touched.q2) return 2;
+  if (touched.q1) return 1;
+  return 0;
+}
+
+function sessionFields(completed){
+  return {
+    believes_in_astrology: answers.q1,
+    prior_experience: priorExperience.slice(),
+    prior_experience_flat: priorExperience.join(','),
+    interest_types: interestTypes.slice(),
+    interest_types_flat: interestTypes.join(','),
+    furthest_question_reached: furthestReached(),
+    time_to_first_answer_ms: firstAnswerAt,
+    time_to_submit_ms: completed ? Date.now() - T_START : null,
+    completed: !!completed,
+    user_agent: navigator.userAgent,
+    referrer: document.referrer || ''
+  };
+}
+
+/* ══════════ Tracking ══════════ */
+function payload(eventName, extra){
+  return Object.assign({
+    instrument: INSTRUMENT,
+    user_id: USER_ID,
+    user_id_raw: RAW_ID || '',
+    id_encoding: ID_ENCODING,
+    is_anon: IS_ANON,
+    source: SOURCE,
+    session_id: SESSION_ID,
+    event_name: eventName,
+    screen: app.dataset.screen
+  }, extra || {});
+}
+function track(eventName, extra){
+  if (!WEBHOOK_URL || WEBHOOK_URL.indexOf('PASTE_YOUR') === 0) return;
+  try {
+    fetch(WEBHOOK_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload(eventName, extra))
+    }).catch(() => {});
+  } catch (err) {}
+}
+function trackBeacon(eventName, extra){
+  if (!WEBHOOK_URL || WEBHOOK_URL.indexOf('PASTE_YOUR') === 0) return;
+  try {
+    const body = JSON.stringify(payload(eventName, extra));
+    if (navigator.sendBeacon) navigator.sendBeacon(WEBHOOK_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+    else track(eventName, extra);
+  } catch (err) {}
+}
+
+const STATUS_TIMEOUT_MS = 4000;
+async function checkStatus(){
+  if (!WEBHOOK_URL || WEBHOOK_URL.indexOf('PASTE_YOUR') === 0) return { ok: true, completed: false };
+  if (IS_ANON) return { ok: true, completed: false };
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (err) {} }, STATUS_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      WEBHOOK_URL + '?action=status&instrument=' + INSTRUMENT + '&user_id=' + encodeURIComponent(USER_ID),
+      ctrl ? { signal: ctrl.signal } : {}
+    );
+    return await res.json();
+  } catch (err) {
+    return { ok: false, completed: false };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ══════════ Questions ══════════ */
+// Same icon language as the pass page (soft rounded-square badge, stroke
+// icon) -- 'consult' and 'reading' are the exact paths reused from there,
+// since those two options are conceptually the same thing on both pages.
+const S = (d, s = 14) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>',
+  neutral:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  consult:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/>',
+  dash:'<path d="M5 12h14"/>',
+  reading:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/>',
+  gift:'<rect x="4" y="10" width="16" height="10" rx="1"/><path d="M4 10h16"/><path d="M12 10v10"/><path d="M8 10c-1.5 0-3-1.1-3-2.8S6.5 4.4 8 4.4c2 0 4 3 4 3.1"/><path d="M16 10c1.5 0 3-1.1 3-2.8S17.5 4.4 16 4.4c-2 0-4 3-4 3.1"/>'
+};
+
+const Q1_OPTS = [
+  {id:'follow',     name:'Yes, I do',   icon:'sun'},
+  {id:'curious',    name:'A little',    icon:'moon'},
+  {id:'not_really', name:'Not really',  icon:'neutral'}
+];
+// "Neither" is exclusive -- picking it clears any app/astrologer selection
+// and vice versa, so the stored array can never contradict itself.
+const PRIOR_EXPERIENCE_OPTS = [
+  {id:'used_app',             name:'Used an astrology app',   icon:'phone',   desc:'Even just to check your horoscope'},
+  {id:'talked_to_astrologer', name:'Talked to an astrologer', icon:'consult', desc:'In person, on a call, doesn\'t matter'},
+  {id:'neither',              name:'Neither',                 icon:'dash',    desc:'This would be a first for you'}
+];
+const EXCLUSIVE_IDS = ['neither'];
+// "A personalised reading" and "Talk about something specific" read as
+// redundant without these -- a reading is general, a specific ask is about
+// one topic. The descriptions carry that distinction, not just the title.
+const INTEREST_OPTS = [
+  {id:'personalized_reading', name:'A personalised reading',        icon:'reading', desc:'A reading about your life, written just for you'},
+  {id:'specific_topic',       name:'Talk about something specific', icon:'compass', desc:'Love, career, money — whatever\'s on your mind'},
+  {id:'first_chat_free',      name:'Free first chat',               icon:'gift',    desc:'No cost, no commitment, just to try it out'}
+];
+
+const CHECK_SVG = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+function renderChips(container, options){
+  container.innerHTML = options.map(o => `
+    <button class="chip" type="button" role="radio" aria-checked="false" data-id="${o.id}">
+      <span class="chip-icon">${S(I[o.icon], o.desc ? 16 : 14)}</span>
+      <span class="chip-label">${o.desc
+        ? `<span class="chip-title">${o.name}</span><span class="chip-desc">${o.desc}</span>`
+        : o.name}</span>
+      <span class="check">${CHECK_SVG}</span>
+    </button>`).join('');
+}
+renderChips(document.getElementById('q1'), Q1_OPTS);
+renderChips(document.getElementById('q2'), PRIOR_EXPERIENCE_OPTS);
+renderChips(document.getElementById('q3'), INTEREST_OPTS);
+
+const app = document.getElementById('app');
+const submitBtn = document.getElementById('submit');
+const submitLabel = document.getElementById('submitLabel');
+const noteEl = document.getElementById('note');
+const stepDots = document.querySelectorAll('#steps i');
+const stepsLabel = document.getElementById('stepsLabel');
+
+function render(){
+  document.querySelectorAll('#q1 .chip').forEach(c =>
+    c.setAttribute('aria-checked', String(c.dataset.id === answers.q1)));
+  document.querySelectorAll('#q2 .chip').forEach(c =>
+    c.setAttribute('aria-checked', String(priorExperience.includes(c.dataset.id))));
+  document.querySelectorAll('#q3 .chip').forEach(c =>
+    c.setAttribute('aria-checked', String(interestTypes.includes(c.dataset.id))));
+
+  const touchedCount = ['q1','q2','q3'].filter(k => touched[k]).length;
+  stepDots[0].classList.toggle('on', touched.q1);
+  stepDots[1].classList.toggle('on', touched.q2);
+  stepDots[2].classList.toggle('on', touched.q3);
+  stepsLabel.textContent = touchedCount + ' of 3';
+
+  // Belief is the only required field -- the subhead promises nothing here
+  // commits the user to anything, so the gate has to match that.
+  // Q1 and Q2 are both required now; Q3 stays optional.
+  const bothRequiredDone = !!answers.q1 && priorExperience.length > 0;
+  submitBtn.disabled = !bothRequiredDone;
+  submitLabel.textContent = bothRequiredDone ? 'Continue' : 'Answer the questions above';
+
+  if (!noteEl.classList.contains('warn')) noteEl.textContent = '';
+}
+
+document.getElementById('q1').addEventListener('click', e => {
+  const c = e.target.closest('.chip');
+  if (!c || submitted) return;
+  const next = c.dataset.id;
+  if (answers.q1 === next) return;              // no-op re-tap, avoid duplicate events
+  if (firstAnswerAt === null) firstAnswerAt = Date.now() - T_START;
+  answers.q1 = next;
+  touched.q1 = true;
+  render();
+  track('q1_answered', { question: 'q1', answer: next, at_ms: Date.now() - T_START });
+});
+
+function wireMulti(containerId, getArr, setArr, touchedKey, eventName, flatField){
+  document.getElementById(containerId).addEventListener('click', e => {
+    const c = e.target.closest('.chip');
+    if (!c || submitted) return;
+    const id = c.dataset.id;
+    let arr = getArr();
+    if (arr.includes(id)){
+      arr = arr.filter(x => x !== id);
+    } else if (EXCLUSIVE_IDS.includes(id)){
+      arr = [id];                                          // "Neither" replaces everything else
+    } else {
+      arr = arr.filter(x => !EXCLUSIVE_IDS.includes(x)).concat(id); // a real answer clears "Neither"
+    }
+    setArr(arr);
+    if (firstAnswerAt === null) firstAnswerAt = Date.now() - T_START;
+    touched[touchedKey] = true;
+    render();
+    track(eventName, { [flatField]: arr.join(','), at_ms: Date.now() - T_START });
+  });
+}
+wireMulti('q2', () => priorExperience, arr => { priorExperience = arr; }, 'q2', 'prior_experience_changed', 'prior_experience_flat');
+wireMulti('q3', () => interestTypes,   arr => { interestTypes   = arr; }, 'q3', 'interest_types_changed',   'interest_types_flat');
+
+submitBtn.addEventListener('click', () => {
+  if (submitBtn.disabled || submitted) return;
+  submitted = true;
+  submitBtn.disabled = true;
+  markDone();
+  app.dataset.screen = 'done';
+  track('survey_submitted', sessionFields(true));
+});
+
+/* ══════════ Boot ══════════ */
+function showAlready(reason){
+  app.dataset.screen = 'already';
+  document.getElementById('loadingScreen').style.display = 'none';
+  track('already_completed', { gate: reason });
+}
+
+async function boot(){
+  if (await isDoneLocally()) return showAlready('local');
+
+  const status = await checkStatus();
+  if (status && status.completed && status.instrument === INSTRUMENT){
+    markDone();
+    return showAlready('server');
+  }
+
+  document.getElementById('loadingScreen').style.display = 'none';
+  render();
+  app.dataset.screen = 'form';
+
+  track('session_start', { user_agent: navigator.userAgent, referrer: document.referrer || '' });
+}
+
+let endSent = false;
+function sendEnd(){
+  if (endSent || submitted) return;
+  if (app.dataset.screen === 'loading' || app.dataset.screen === 'already') return;
+  endSent = true;
+  trackBeacon('session_end', sessionFields(false));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sendEnd(); });
+window.addEventListener('pagehide', sendEnd);
+
+boot();
+</script>
+</body>
+</html>
